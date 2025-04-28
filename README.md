@@ -3,11 +3,12 @@
 ## Overview
 
 This project describes a complete CI/CD architecture deployed on **Azure**, based on a **microservices architecture**.  
-It uses separate GitHub repositories, GitHub Actions for CI/CD pipelines, Terraform for infrastructure as code, and Azure services like Container Apps and Azure Container Registry (ACR).
+It uses separate GitHub repositories, GitHub Actions for CI/CD pipelines, Terraform for infrastructure as code, Ansible for configuration management, and Azure services like Virtual Machines, Docker, and Docker Compose.
 
 All microservices follow well-established architectural patterns:  
 - **API Gateway Pattern** for centralized request routing and access control.  
 - **Health Check Pattern** for active health monitoring and auto-recovery of services.
+- **Circuit Breaker Pattern** for controlling the flow of requests in case of failures, particularly between the API Gateway and backend services.
 
 ---
 
@@ -18,7 +19,7 @@ All microservices follow well-established architectural patterns:
 - **Infrastructure Repository**:
   - Contains Terraform scripts, Ansible configurations, and Docker Compose files.
   - Manages all infrastructure provisioning through GitHub Actions.
-
+  
 - **Microservices Repositories**:
   - One repository per microservice:
     - `frontend`
@@ -27,7 +28,7 @@ All microservices follow well-established architectural patterns:
     - `users-api`
     - `todos-api`
     - `log-message-processor`
-
+    
 Each microservice repository includes its own CI/CD pipeline for building and pushing Docker images.
 
 ---
@@ -35,9 +36,10 @@ Each microservice repository includes its own CI/CD pipeline for building and pu
 ### Infrastructure Deployment (Terraform)
 
 - Terraform provisions:
-  - **Azure Container Apps** instances for each microservice.
-  - **Azure Container Registry (ACR)** for storing Docker images.
+  - **Azure Virtual Machine** to host Docker and Docker Compose.
   - **Azure Storage Account** with a Blob Container to store the Terraform `tfstate`.
+  - **External Configuration Store**: The pipeline saves the Virtual Machine's IP in Azure Key Vault for use by code pipelines during deployments.
+  
 - Authentication is handled through an **App Registration** and **Service Principal** with permission to push to ACR.
 - The infrastructure pipeline is triggered by changes to the `main` branch of the infrastructure repository.
 
@@ -50,12 +52,15 @@ Each microservice repository includes its own CI/CD pipeline for building and pu
   - Steps:
     - Authenticate with Azure.
     - Apply Terraform scripts.
-
+    - Store the Virtual Machine's IP in Azure Key Vault.
+  
 - **Microservices Pipelines**:
   - Trigger: Push to `main`.
   - Steps:
     - Build Docker image.
-    - Push Docker image to ACR.
+    - Push Docker image to Azure Container Registry (ACR).
+    - Retrieve the Virtual Machine IP from Key Vault.
+    - Deploy microservices to the Virtual Machine via Docker Compose.
 
 ---
 
@@ -64,7 +69,7 @@ Each microservice repository includes its own CI/CD pipeline for building and pu
 | Service                | Technology                  | Purpose                                                                                       |
 |-------------------------|------------------------------|-----------------------------------------------------------------------------------------------|
 | Frontend                | Vue.js + Node.js + NPM       | Serves web application and acts as reverse proxy to `Zipkin` and `api-gateway`                |
-| API Gateway             | Node.js + Express            | Routes client requests to `auth-api` or `todos-api`.                                          |
+| API Gateway             | Node.js + Express            | Routes client requests to `auth-api` or `todos-api`, with circuit breaker and retry logic.    |
 | Auth API                | Golang                       | Authenticates users via `users-api` and generates JWT tokens.                                 |
 | Users API               | Java + Spring Boot           | Manages user data for authentication and validation.                                          |
 | Todos API               | Node.js + Express            | Manages user tasks stored in `redis`.                                                         |
@@ -80,15 +85,17 @@ Each microservice repository includes its own CI/CD pipeline for building and pu
 
 - The **API Gateway** acts as a single entry point for the frontend.
 - Routes requests to backend services (`auth-api`, `todos-api`) based on URL paths.
+- Implements a **circuit breaker** pattern to handle failed requests: after a certain number of failed requests, the gateway prevents further requests and retries them after a delay.
 - Benefits:
   - Simplifies frontend client.
   - Centralizes authentication, logging, and routing.
   - Enables easier scalability and security.
+  - Provides a safeguard against backend failures.
 
 ### Health Check Pattern
 
 - Each microservice implements a **health check endpoint** (e.g., `/health`).
-- Azure Container Apps uses these endpoints to automatically:
+- Azure Virtual Machine uses these endpoints to automatically:
   - Monitor service health.
   - Restart unhealthy containers.
   - Route traffic only to healthy instances.
@@ -106,6 +113,6 @@ This architecture offers:
 - Declarative and repeatable infrastructure management with Terraform.
 - Strong separation of concerns using microservices.
 - Monitoring and automatic healing through health checks.
-- Scalable and modular deployment using Azure Container Apps.
+- Circuit breaker logic in API Gateway for service resilience.
+- Scalable and modular deployment using Azure Virtual Machine, Docker, and Docker Compose.
 
----
