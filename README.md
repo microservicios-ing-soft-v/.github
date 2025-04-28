@@ -8,8 +8,6 @@ It uses separate GitHub repositories, GitHub Actions for CI/CD pipelines, Terraf
 All microservices follow well-established architectural patterns:  
 - **API Gateway Pattern** for centralized request routing and access control.  
 - **Health Check Pattern** for active health monitoring and auto-recovery of services.
-- **Circuit Breaker Pattern** for controlling the flow of requests in case of failures, particularly between the API Gateway and backend services.
-
 ---
 
 ## Architecture Components
