@@ -98,6 +98,17 @@ Each microservice repository includes its own CI/CD pipeline for building and pu
   - Restart unhealthy containers.
   - Route traffic only to healthy instances.
 
+### External Configuration Store Pattern
+- Application configuration values, such as the Azure VM IP address, are stored securely in an external key vault.
+- The infrastructure pipeline saves VM details into the key vault.
+- Code pipelines retrieve these configurations during deployment or runtime.
+
+Benefits:
+
+- Decouples configuration from application code.
+- Enables dynamic updates without redeploying services.
+- Strengthens security by keeping sensitive values out of code repositories.
+
 ---
 
 ## Infrastructure Diagram
