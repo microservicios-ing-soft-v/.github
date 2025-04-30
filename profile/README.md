@@ -156,7 +156,7 @@ Each microservice has a GitHub Actions pipeline with the following workflow:
 
 ## Infrastructure Diagram
 
-![Architecture Diagram](./diagram.png)
+![Architecture Diagram](../diagram.png)
 
 ---
 
