@@ -69,7 +69,7 @@ The infrastructure repository provisions the following using **Terraform**:
 
 - **Network Security Group (NSG) Rules**:
   - Configured to allow:
-    - HTTP/HTTPS traffic to the **frontend**.
+    - HTTP traffic to the **frontend** (port 8080).
     - Access to the **Zipkin** interface (port 9411).
   - Blocks unnecessary ports to secure the VM.
 
