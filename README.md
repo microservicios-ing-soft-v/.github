@@ -56,6 +56,7 @@ The infrastructure repository provisions the following using **Terraform**:
 - **Azure Virtual Machine (VM)**:
   - Hosts Docker and Docker Compose.
   - Acts as the runtime environment for all microservices.
+  - After provisioning, the **infrastructure pipeline executes an Ansible playbook** to automatically install and configure required dependencies on the VM, including **Docker**, **Docker Compose**, and other system packages essential for container orchestration and service execution.
 
 - **Azure Container Registry (ACR)**:
   - Stores Docker images pushed by CI pipelines.
@@ -156,7 +157,7 @@ Each microservice has a GitHub Actions pipeline with the following workflow:
 
 ## Infrastructure Diagram
 
-![Architecture Diagram](./diagram.png)
+![Architecture Diagram](../diagram.png)
 
 ---
 
